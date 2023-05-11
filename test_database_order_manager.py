@@ -4,12 +4,12 @@
 import unittest
 from datetime import datetime
 import logging
-from .Order import OrderId
-from .Station import StationId
-from .TaskStatus import TaskStatus
-from .Item import ItemCounter, ItemId
+from Order import OrderId
+from Station import StationId
+from TaskStatus import TaskStatus
+from Item import ItemCounter, ItemId
 
-from .database_order_manager import DatabaseOrderManager
+from database_order_manager import DatabaseOrderManager
 
 
 # Set up logging
@@ -37,7 +37,6 @@ class TestDatabaseOrderManager(unittest.TestCase):
                                        description="order with 5 items")
             returned_orders.append(order)
 
-        # Order ascending by created, same as orders
         orders = self.dbm.get_orders()
         assert orders == returned_orders
         assert len(orders) == 3

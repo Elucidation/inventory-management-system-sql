@@ -12,11 +12,11 @@ class OrderStatus(Enum):
 
     @staticmethod
     def load(value: str) -> OrderStatus:
-        if value == OrderStatus.OPEN.value:
+        if value == OrderStatus.OPEN:
             return OrderStatus.OPEN
-        elif value == OrderStatus.IN_PROGRESS.value:
+        elif value == OrderStatus.IN_PROGRESS:
             return OrderStatus.IN_PROGRESS
-        elif value == OrderStatus.COMPLETE.value:
+        elif value == OrderStatus.COMPLETE:
             return OrderStatus.COMPLETE
 
         return OrderStatus.ERROR

@@ -1,26 +1,23 @@
 """Order Manager DB contains Orders/Items/Stations/Tasks and their relationships"""
 import functools
 import sqlite3 as sl
-import os
 import time
 from typing import List, Optional, Tuple
 from datetime import datetime
 import logging
 from collections import Counter
 
-from .Order import Order, OrderId
-from .OrderStatus import OrderStatus
-from .Station import Station, StationId, Task, TaskId
-from .TaskStatus import TaskStatus
-from .Item import ItemCounter, ItemId, get_item_names
+from Order import Order, OrderId
+from OrderStatus import OrderStatus
+from Station import Station, StationId, Task, TaskId
+from TaskStatus import TaskStatus
+from Item import ItemCounter, ItemId, get_item_names
 # pylint: disable=C0301:line-too-long
 
-MAIN_DB = os.environ.get('ORDERS_DB_PATH', '/data/orders.db')
+MAIN_DB = "orders.db"
 
 # Set up logging
 logger = logging.getLogger("database_order_manager")
-
-# TODO : Add TimeTZ for datetime
 
 
 def timeit(func):
@@ -189,17 +186,14 @@ class DatabaseOrderManager:
         )
 
     @timeit
-    def get_orders(self, limit_rows: int = 49999, status=None,
-                   direction="ASC", order_by='created') -> List[Order]:
+    def get_orders(self, limit_rows: int = 49999, status=None) -> List[Order]:
         cur = self.con.cursor()
         # order_id,created_by,created,finished,description,status
         if status:
             cur.execute(
-                'SELECT * FROM "Order" WHERE status=? ORDER BY '
-                f'{order_by} {direction} LIMIT ?', (status, limit_rows))
+                'SELECT * FROM "Order" WHERE status=? LIMIT ?', (status, limit_rows))
         else:
-            cur.execute(
-                f'SELECT * FROM "Order" ORDER BY {order_by} {direction} LIMIT ?', (limit_rows,))
+            cur.execute('SELECT * FROM "Order" LIMIT ?', (limit_rows,))
         orders = []
         while True:
             row = cur.fetchone()
@@ -219,13 +213,6 @@ class DatabaseOrderManager:
             )
             orders.append(order)
         return orders
-
-    @timeit
-    def get_order_counts(self):
-        result = self.con.execute(
-            'SELECT count(order_id) as count, status FROM "Order" GROUP BY status')
-        # Returns a dict with order status str as key and count(orders) as value
-        return {status_str: count for count, status_str in result}
 
     @timeit
     def get_items_for_order(self, order_id: int) -> ItemCounter:
@@ -455,35 +442,13 @@ class DatabaseOrderManager:
     def get_stations_and_tasks(self) -> List[Tuple[Station, List[Task]]]:
         stations = self.get_stations()
         station_tasks = []
-        # TODO : Get all tasks in one request
         for station in stations:
-            if station.has_order:
-                tasks = self.get_station_order_tasks(
-                    station.station_id, station.order_id)
-                station_tasks.append((station, tasks))
+            tasks = self.get_incomplete_station_tasks(station.station_id)
+            station_tasks.append((station, tasks))
         return station_tasks
 
     @timeit
-    def get_station_order_tasks(self, station_id: StationId,
-                                order_id: OrderId, limit_rows=49999) -> List[Task]:
-        """Return all tasks associated with a station and order"""
-        if not station_id or not order_id:
-            return []
-        result = self.con.execute(
-            'SELECT task_id, station_id, order_id, item_id, quantity, status '
-            'FROM "Task" WHERE station_id=? AND order_id=? LIMIT ?',
-            (station_id, order_id, limit_rows))
-        tasks = []
-        for row in result:
-            (task_id, station_id, order_id, item_id, quantity, status) = row
-            task = Task(TaskId(task_id), station_id=StationId(station_id),
-                        order_id=OrderId(order_id), item_id=ItemId(item_id),
-                        quantity=quantity, status=TaskStatus(status))
-            tasks.append(task)
-        return tasks
-
-    @timeit
-    def get_incomplete_station_tasks(self, station_id: StationId, limit_rows=49999) -> List[Task]:
+    def get_incomplete_station_tasks(self, station_id: int, limit_rows=49999) -> List[Task]:
         """Return incomplete tasks associated with a station"""
         result = self.con.execute(
             'SELECT task_id, station_id, order_id, item_id, quantity, status FROM "Task" WHERE station_id=? LIMIT ?', (station_id, limit_rows))

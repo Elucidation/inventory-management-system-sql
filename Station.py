@@ -1,8 +1,8 @@
 """Contains Station and Task classes"""
 from typing import NewType, Optional
-from .Order import OrderId
-from .Item import ItemId
-from .TaskStatus import TaskStatus
+from Order import OrderId
+from Item import ItemId
+from TaskStatus import TaskStatus
 StationId = NewType('StationId', int)
 TaskId = NewType('TaskId', int)
 

@@ -2,8 +2,8 @@
 from typing import NewType, Union, Optional
 from datetime import datetime
 from collections import Counter
-from .Item import ItemId, ItemCounter
-from .OrderStatus import OrderStatus
+from Item import ItemId, ItemCounter
+from OrderStatus import OrderStatus
 OrderId = NewType('OrderId', int)
 
 
